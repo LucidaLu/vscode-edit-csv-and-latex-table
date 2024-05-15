@@ -371,6 +371,7 @@ setupAndApplyInitialConfigPart1(initialConfig, initialVars)
 
 setupGlobalShortcutsInVs()
 
+console.log(initialContent);
 //see readDataAgain
 let _data = parseCsv(initialContent, defaultCsvReadOptions)
 

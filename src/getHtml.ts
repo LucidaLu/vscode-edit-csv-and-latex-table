@@ -964,7 +964,7 @@ export function createEditorHtml(webview: vscode.Webview, context: vscode.Extens
 	${findWidgetHtml}
 
 	${bodyPageHtml}
-
+  
 	${helpModalHtml}
 
 	${askReadAgainModalHtml}

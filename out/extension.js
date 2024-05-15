@@ -13,7 +13,7 @@ const configurationHelper_1 = require("./configurationHelper");
  * for editor uris this is the scheme to use
  * so we can find editors
  */
-exports.editorUriScheme = 'csv-edit';
+exports.editorUriScheme = 'csv-tabular-edit';
 // this method is called when your extension is activated
 // your extension is activated the very first time the command is executed
 function activate(context) {
@@ -23,7 +23,7 @@ function activate(context) {
     // Use the console to output diagnostic information (console.log) and errors (console.error)
     // This line of code will only be executed once when your extension is activated
     let instanceManager = new instanceManager_1.InstanceManager();
-    const applyCsvCommand = vscode.commands.registerCommand('edit-csv.apply', () => {
+    const applyCsvCommand = vscode.commands.registerCommand('edit-csv-tabular.apply', () => {
         const instance = getActiveEditorInstance(instanceManager);
         if (!instance)
             return;
@@ -32,7 +32,7 @@ function activate(context) {
         };
         instance.panel.webview.postMessage(msg);
     });
-    const applyAndSaveCsvCommand = vscode.commands.registerCommand('edit-csv.applyAndSave', () => {
+    const applyAndSaveCsvCommand = vscode.commands.registerCommand('edit-csv-tabular.applyAndSave', () => {
         const instance = getActiveEditorInstance(instanceManager);
         if (!instance)
             return;
@@ -42,14 +42,14 @@ function activate(context) {
         instance.panel.webview.postMessage(msg);
     });
     //called to get from an editor to the source file
-    const gotoSourceCsvCommand = vscode.commands.registerCommand('edit-csv.goto-source', () => {
+    const gotoSourceCsvCommand = vscode.commands.registerCommand('edit-csv-tabular.goto-source', () => {
         if (vscode.window.activeTextEditor) { //a web view is no text editor...
             vscode.window.showInformationMessage("Open a csv editor first to show the source csv file");
             return;
         }
         openSourceFileFunc(instanceManager);
     });
-    const editCsvCommand = vscode.commands.registerCommand('edit-csv.edit', () => {
+    const editCsvCommand = vscode.commands.registerCommand('edit-csv-tabular.edit', () => {
         const shouldOpenEditor = beforeEditCsvCheck(instanceManager);
         if (!shouldOpenEditor)
             return;
@@ -60,8 +60,33 @@ function activate(context) {
         //we have no old editor -> create new one
         createNewEditorInstance(context, vscode.window.activeTextEditor, instanceManager);
     });
+    const editTabularCommand = vscode.commands.registerCommand('edit-csv-tabular.edit-tabular', () => {
+        if (!vscode.window.activeTextEditor) {
+            return;
+        }
+        let lang = vscode.window.activeTextEditor.document.languageId.toLowerCase();
+        if (lang !== 'latex') {
+            vscode.window.showInformationMessage("Open a tex file first");
+            return false;
+        }
+        const editor = vscode.window.activeTextEditor;
+        const selection = editor.selection;
+        if (selection && !selection.isEmpty) {
+            const selectionRange = new vscode.Range(selection.start.line, selection.start.character, selection.end.line, selection.end.character);
+            const selected = editor.document.getText(selectionRange);
+            // alert(highlighted);
+            // let orange = vscode.window.createOutputChannel("Orange");
+            // orange.appendLine(highlighted);
+            if ((0, util_1.isTabular)(selected)) {
+                console.log(selected);
+                // regardless of whether previously there is one
+                // remember to add a comment around the selected text
+                createNewTabularEditorInstance(context, vscode.window.activeTextEditor, instanceManager);
+            }
+        }
+    });
     //only use this programmatically to open the editor with the given config
-    const editCsvWithConfigCommand = vscode.commands.registerCommand('edit-csv.editWithConfig', (overwriteConfigObj) => {
+    const editCsvWithConfigCommand = vscode.commands.registerCommand('edit-csv-tabular.editWithConfig', (overwriteConfigObj) => {
         if (!overwriteConfigObj) {
             vscode.window.showErrorMessage("No settings object provided");
             return;
@@ -132,6 +157,7 @@ function activate(context) {
     const onDidChangeConfigurationCallback = onDidChangeConfiguration.bind(undefined, instanceManager);
     const onDidChangeConfigurationHandler = vscode.workspace.onDidChangeConfiguration(onDidChangeConfigurationCallback);
     context.subscriptions.push(editCsvCommand);
+    context.subscriptions.push(editTabularCommand);
     context.subscriptions.push(editCsvWithConfigCommand);
     context.subscriptions.push(gotoSourceCsvCommand);
     context.subscriptions.push(applyCsvCommand);
@@ -151,7 +177,7 @@ exports.deactivate = deactivate;
  * @param e null to manually update all instances
  */
 function onDidChangeConfiguration(instanceManager, e) {
-    if (e === null || e.affectsConfiguration('csv-edit.fontSizeInPx')) {
+    if (e === null || e.affectsConfiguration('csv-tabular-edit.fontSizeInPx')) {
         const newFontSize = (0, configurationHelper_1.getExtensionConfiguration)().fontSizeInPx;
         const instances = instanceManager.getAllInstances();
         for (let i = 0; i < instances.length; i++) {
@@ -408,6 +434,269 @@ function createNewEditorInstance(context, activeTextEditor, instanceManager, ove
             case "apply": {
                 const { csvContent, saveSourceFile } = message;
                 applyContent(instance, csvContent, saveSourceFile, config.openSourceFileAfterApply);
+                break;
+            }
+            case "copyToClipboard": {
+                vscode.env.clipboard.writeText(message.text);
+                break;
+            }
+            case "setHasChanges": {
+                instance.hasChanges = message.hasChanges;
+                setEditorHasChanges(instance, message.hasChanges);
+                break;
+            }
+            //this only works for vs extension and also asks the user for permission...
+            // case 'openUrl': {
+            // 	//from https://github.com/microsoft/vscode/issues/9651
+            // 	vscode.commands.executeCommand('vscode.open', vscode.Uri.parse(message.url))
+            // 	break
+            // }
+            default: notExhaustive(message, `Received unknown post message from extension: ${JSON.stringify(message)}`);
+        }
+    }, undefined, context.subscriptions);
+    panel.onDidDispose(() => {
+        var _a, _b;
+        (0, util_1.debugLog)(`dispose csv editor panel (webview)`);
+        try {
+            instanceManager.removeInstance(instance);
+        }
+        catch (error) {
+            vscode.window.showErrorMessage(`Could not destroy an editor instance, error: ${error.message}`);
+        }
+        try {
+            (_a = instance.unsubscribeWatcher) === null || _a === void 0 ? void 0 : _a.dispose();
+            (_b = instance.sourceFileWatcher) === null || _b === void 0 ? void 0 : _b.dispose();
+        }
+        catch (error) {
+            vscode.window.showErrorMessage(`Could not dispose source file watcher for file ${instance.document.uri.fsPath}, error: ${error.message}`);
+        }
+    }, null, context.subscriptions);
+    //because for col it is the cursor pos, it can be larger than the line length! (well, equall numbers)
+    let activeCol = activeTextEditor.selection.active.character;
+    if (activeTextEditor.document.lineAt(activeTextEditor.selection.active.line).text.length === activeCol) {
+        activeCol = activeTextEditor.document.lineAt(activeTextEditor.selection.active.line).text.length - 1;
+    }
+    let platform;
+    switch (process.platform) {
+        case 'aix':
+        case 'freebsd':
+        case 'linux':
+        case 'openbsd':
+        case 'android':
+        case 'cygwin':
+        case 'sunos':
+            platform = 'linux';
+            break;
+        case 'win32':
+            platform = 'win';
+            break;
+        case 'darwin':
+            platform = 'mac';
+            break;
+        default:
+            platform = 'linux';
+    }
+    panel.webview.html = (0, getHtml_1.createEditorHtml)(panel.webview, context, config, {
+        isWatchingSourceFile: instance.sourceFileWatcher ? true : false,
+        sourceFileCursorLineIndex: activeTextEditor.selection.active.line,
+        sourceFileCursorColumnIndex: activeCol,
+        isCursorPosAfterLastColumn: activeTextEditor.document.lineAt(activeTextEditor.selection.active.line).text.length === activeTextEditor.selection.active.character,
+        openTableAndSelectCellAtCursorPos: config.openTableAndSelectCellAtCursorPos,
+        os: platform
+    });
+}
+function createNewTabularEditorInstance(context, activeTextEditor, instanceManager, overwriteSettings = null) {
+    var _a, _b;
+    const uri = activeTextEditor.document.uri;
+    const title = getEditorTitle(activeTextEditor.document);
+    let panel = vscode.window.createWebviewPanel('csv-editor', title, (0, util_1.getCurrentViewColumn)(), {
+        enableFindWidget: false,
+        enableCommandUris: true,
+        enableScripts: true,
+        retainContextWhenHidden: true
+    });
+    //check if the file is in the current workspace
+    let isInCurrentWorkspace = activeTextEditor.document.uri.fsPath !== vscode.workspace.asRelativePath(activeTextEditor.document.uri.fsPath);
+    const config = (0, configurationHelper_1.getExtensionConfiguration)();
+    if (overwriteSettings !== null) {
+        (0, configurationHelper_1.overwriteConfiguration)(config, overwriteSettings);
+    }
+    config.readOption_comment = "#";
+    config.readOption_quoteChar = '';
+    config.readOption_escapeChar = '';
+    config.readOption_delimiter = '&';
+    config.tabularFlag = true;
+    //a file watcher works when the file is in the current workspace (folder) even if it's not opened
+    //it also works when we open any file (not in the workspace) and 
+    //	we edit the file inside vs code
+    //	we edit outside vs code but the file is visible in vs code (active)
+    //it does NOT work when the file is not in the workspace and we edit the file outside of vs code and the file is not visible in vs code (active)
+    // const watcher = vscode.workspace.createFileSystemWatcher(activeTextEditor.document.fileName, true, false, true)
+    let instance;
+    // NOTE that watching new files (untitled) is not supported by this is probably no issue...
+    let watcher = null;
+    if (isInCurrentWorkspace) {
+        if (config.shouldWatchCsvSourceFile) {
+            //if the file is in the current workspace we the file model in vs code is always synced so is this (faster reads/cached)
+            watcher = vscode.workspace.createFileSystemWatcher(activeTextEditor.document.fileName, true, false, true);
+        }
+        instance = {
+            kind: 'workspaceFile',
+            panel: null,
+            sourceUri: uri,
+            editorUri: uri.with({
+                scheme: exports.editorUriScheme
+            }),
+            hasChanges: false,
+            originalTitle: title,
+            sourceFileWatcher: watcher,
+            document: activeTextEditor.document,
+            ignoreChangeEvents: false,
+            unsubscribeWatcher: null,
+            lastCommittedContent: ''
+        };
+    }
+    else {
+        if (config.shouldWatchCsvSourceFile) {
+            //the problem with this is that it is faster than the file model (in vs code) can sync the file...
+            watcher = vscode.workspace.createFileSystemWatcher(new vscode.RelativePattern(activeTextEditor.document.fileName, "*"), true, false, true);
+        }
+        instance = {
+            kind: 'externalFile',
+            panel: null,
+            sourceUri: uri,
+            editorUri: uri.with({
+                scheme: exports.editorUriScheme
+            }),
+            hasChanges: false,
+            originalTitle: title,
+            sourceFileWatcher: watcher,
+            document: activeTextEditor.document,
+            ignoreChangeEvents: false,
+            unsubscribeWatcher: null,
+            lastCommittedContent: ''
+        };
+    }
+    if (config.shouldWatchCsvSourceFile && instance.sourceFileWatcher) {
+        //turns our we need the watcher because onDidChangeTextDocument does not fire when the file is closed in vs code?
+        //check with: open csv source file -> open table -> close source file -> edit source file outside vs code -> `onDidChangeTextDocument` fired?
+        //subsequent changes will fire `onDidChangeTextDocument` again, because in the handler here we call `openTextDocument` which probably attaches the internal watcher again
+        const debounced = (0, util_1.debounce)(onWatcherChangeDetecedHandler, 1000);
+        let unsubscribe = instance.sourceFileWatcher.onDidChange((e) => {
+            (0, util_1.debugLog)(`debounce sourceFileWatcher ${e.fsPath}`);
+            debounced(e, instanceManager);
+        });
+        instance.unsubscribeWatcher = unsubscribe;
+    }
+    try {
+        instanceManager.addInstance(instance);
+    }
+    catch (error) {
+        vscode.window.showErrorMessage(`Could not create an editor instance, error: ${error.message}`);
+        (_a = instance.unsubscribeWatcher) === null || _a === void 0 ? void 0 : _a.dispose();
+        (_b = instance.sourceFileWatcher) === null || _b === void 0 ? void 0 : _b.dispose();
+        return;
+    }
+    //just set the panel if we added the instance
+    instance.panel = panel;
+    panel.webview.onDidReceiveMessage((message) => {
+        switch (message.command) {
+            case 'ready': {
+                (0, util_1.debugLog)('received ready from webview');
+                instance.hasChanges = false;
+                setEditorHasChanges(instance, false);
+                let funcSendContent = (initialText) => {
+                    const textSlices = (0, util_1.partitionString)(initialText, 1024 * 1024); //<1MB less should be loaded in a blink
+                    for (let i = 0; i < textSlices.length; i++) {
+                        const textSlice = textSlices[i];
+                        const msg = {
+                            command: "csvUpdate",
+                            csvContent: {
+                                text: textSlice.text,
+                                sliceNr: textSlice.sliceNr,
+                                totalSlices: textSlice.totalSlices
+                            }
+                        };
+                        panel.webview.postMessage(msg);
+                    }
+                };
+                if (isInCurrentWorkspace === false) {
+                    //slow path
+                    //external files are normally not synced so better read the file...
+                    // vscode.workspace.fs.readFile(instance.sourceUri)
+                    // 	.then(content => {
+                    // 		console.log(`encoding`)
+                    // 		//TODO get encoding????
+                    // 		//see https://github.com/microsoft/vscode/issues/824
+                    // const text = Buffer.from(content).toString('utf-8')
+                    // 		funcSendContent(text)
+                    // 	}, error => {
+                    // 		vscode.window.showErrorMessage(`could not read the source file, error: ${error?.message}`);
+                    // 	})
+                    //TODO
+                    //THIS might not get the up-to-date state of the file on the disk
+                    //but vs code api cannot get the file encoding (so that we could use vscode.workspace.fs.readFile)
+                    //or allow us to force to updat the memory model in vs code of the file...
+                    //see https://github.com/microsoft/vscode/issues/824
+                    //see https://github.com/microsoft/vscode/issues/3025
+                    //in case we closed the file (we have an old view/model of the file) open it again
+                    vscode.workspace.openTextDocument(instance.sourceUri)
+                        .then(document => {
+                        const content = document.getText();
+                        instance.lastCommittedContent = content;
+                        // debugLog(`content send`, content.split('\n')[0])
+                        funcSendContent(content);
+                    }, error => {
+                        vscode.window.showErrorMessage(`could not read the source file, error: ${error === null || error === void 0 ? void 0 : error.message}`);
+                    });
+                }
+                else if (activeTextEditor.document.isClosed) {
+                    //slow path
+                    //not synchronized anymore...
+                    //we need to get the real file content from disk
+                    vscode.workspace.openTextDocument(instance.sourceUri)
+                        .then(document => {
+                        const content = document.getText();
+                        instance.lastCommittedContent = content;
+                        // debugLog(`content send`, content.split('\n')[0])
+                        funcSendContent(content);
+                    }, error => {
+                        vscode.window.showErrorMessage(`could not read the source file, error: ${error === null || error === void 0 ? void 0 : error.message}`);
+                    });
+                }
+                else {
+                    //fast path
+                    //file is still open and synchronized
+                    //sometimes the model is not updated fast enough after a change detection, thus we get old content
+                    //however, if the user manually triggers the reload, then the model is already synced
+                    const content = activeTextEditor.document.getText();
+                    // debugLog(`content send`, content.split('\n')[0])
+                    instance.lastCommittedContent = content;
+                    funcSendContent(content);
+                }
+                (0, util_1.debugLog)('finished sending csv content to webview');
+                break;
+            }
+            case "msgBox": {
+                if (message.type === 'info') {
+                    vscode.window.showInformationMessage(message.content);
+                }
+                else if (message.type === 'warn') {
+                    vscode.window.showWarningMessage(message.content);
+                }
+                else if (message.type === 'error') {
+                    vscode.window.showErrorMessage(message.content);
+                }
+                else {
+                    const _msg = `unknown show message box type: ${message.type}, message: ${message.content}`;
+                    console.error(_msg);
+                    vscode.window.showErrorMessage(_msg);
+                }
+                break;
+            }
+            case "apply": {
+                // const { csvContent, saveSourceFile } = message
+                // applyContent(instance, csvContent, saveSourceFile, config.openSourceFileAfterApply)
                 break;
             }
             case "copyToClipboard": {

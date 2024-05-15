@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.partitionString = exports.isCsvFile = exports.debounce = exports.limitSingleCharacterString = exports.getCurrentViewColumn = exports.debugLog = void 0;
+exports.partitionString = exports.isTabular = exports.isCsvFile = exports.debounce = exports.limitSingleCharacterString = exports.getCurrentViewColumn = exports.debugLog = void 0;
 const vscode = require("vscode");
 function debugLog(msg) {
     // console.log(msg)
@@ -50,10 +50,14 @@ function isCsvFile(document) {
         //rainbow csv extension types, see https://github.com/mechatroner/vscode_rainbow_csv
         'csv (semicolon)', 'csv (pipe)', 'csv (whitespace)', 'csv (tilde)', 'csv (caret)', 'csv (colon)', 'csv (double quote)', 'csv (equals)', 'csv (dot)', 'csv (hyphen)', 'dynamic csv'
     ];
-    const _isCsvFile = possible.find(p => p === lang) && document.uri.scheme !== 'csv-edit';
+    const _isCsvFile = possible.find(p => p === lang) && document.uri.scheme !== 'csv-tabular-edit';
     return _isCsvFile;
 }
 exports.isCsvFile = isCsvFile;
+function isTabular(text) {
+    return true;
+}
+exports.isTabular = isTabular;
 function partitionString(text, sliceLength) {
     const slices = [];
     const totalSlices = Math.ceil(text.length / sliceLength);

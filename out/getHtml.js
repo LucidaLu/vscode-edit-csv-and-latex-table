@@ -64,7 +64,7 @@ function createEditorHtml(webview, context, config, initialVars) {
 
 		<div class="search-input-wrapper">
 			<vscode-text-field id="find-widget-input" placeholder="Find..." class="input" title="Enter to start search">
-			<span slot="end" style="width: 81px";>
+			<span slot="end" style="width: 81px">
 					<!-- search options -->
 				<div class="flexed find-options">
 					<vscode-button appearance="icon" id="find-window-option-match-case" class="btn option" onclick="findWidgetInstance.toggleFindWindowOptionMatchCase()" title="Match case">
@@ -948,7 +948,7 @@ function createEditorHtml(webview, context, config, initialVars) {
 	${findWidgetHtml}
 
 	${bodyPageHtml}
-
+  
 	${helpModalHtml}
 
 	${askReadAgainModalHtml}

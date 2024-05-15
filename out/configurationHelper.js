@@ -12,6 +12,7 @@ const defaultConfig = {
     lastColumnOrFirstColumnNavigationBehavior: 'wrap',
     optionsBarAppearance: "collapsed",
     readOption_comment: "#",
+    tabularFlag: false,
     readOption_quoteChar: '"',
     readOption_escapeChar: '"',
     readOption_delimiter: "",
@@ -65,7 +66,7 @@ function getExtensionConfiguration() {
     for (const key in defaultConfig) {
         const optionValue = configObj.get(key);
         if (optionValue === undefined) {
-            vscode.window.showWarningMessage(`Could not find option: ${key} in csv-edit configuration`);
+            vscode.window.showWarningMessage(`Could not find option: ${key} in csv-tabular-edit configuration`);
             continue;
         }
         //@ts-ignore
