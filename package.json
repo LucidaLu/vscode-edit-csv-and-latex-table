@@ -258,10 +258,6 @@
           "default": true,
           "description": "true: the cell/row color is changed if the first cell is a comment, (might have negative impact on performance e.g. for large data sets), false: no additional highlighting (comments are still treated as comments). NOTE that only the first cell value is saved to the csv file."
         },
-        "csv-tabular-edit.tabularFlag": {
-          "type": "boolean",
-          "default": false
-        },
         "csv-tabular-edit.lastRowEnterBehavior": {
           "type": "string",
           "default": "default",

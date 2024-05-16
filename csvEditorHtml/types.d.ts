@@ -96,10 +96,6 @@ type EditCsvConfig = {
   optionsBarAppearance: 'expanded' | 'collapsed' //| 'remember'
 
   /**
-   * determine if working on tabular
-   */
-  tabularFlag: boolean
-  /**
    * the delimiter to use, empty string to auto detect
    */
   readOption_delimiter: string

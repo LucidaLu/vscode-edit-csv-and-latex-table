@@ -2,12 +2,12 @@
 
 
 const defaultInitialVars: InitialVars = {
-	isWatchingSourceFile: false,
-	sourceFileCursorLineIndex: null,
-	sourceFileCursorColumnIndex: null,
-	isCursorPosAfterLastColumn: false,
-	openTableAndSelectCellAtCursorPos: 'initialOnly_correctRowAlwaysFirstColumn',
-	os: 'web',
+  isWatchingSourceFile: false,
+  sourceFileCursorLineIndex: null,
+  sourceFileCursorColumnIndex: null,
+  isCursorPosAfterLastColumn: false,
+  openTableAndSelectCellAtCursorPos: 'initialOnly_correctRowAlwaysFirstColumn',
+  os: 'web',
 }
 
 declare var acquireVsCodeApi: any
@@ -19,25 +19,25 @@ declare var initialVars: InitialVars
 let vscode: VsExtension | undefined = undefined
 
 if (typeof acquireVsCodeApi !== 'undefined') {
-	vscode = acquireVsCodeApi()
+  vscode = acquireVsCodeApi()
 }
 
 if (typeof initialConfig === 'undefined') {
-	// tslint:disable-next-line:no-duplicate-variable
-	var initialConfig = undefined as EditCsvConfig | undefined
-	// tslint:disable-next-line:no-duplicate-variable
-	var initialVars = {
-		...defaultInitialVars
-	}
+  // tslint:disable-next-line:no-duplicate-variable
+  var initialConfig = undefined as EditCsvConfig | undefined
+  // tslint:disable-next-line:no-duplicate-variable
+  var initialVars = {
+    ...defaultInitialVars
+  }
 } else {
 
-	// some fixes, was sometimes a string because if package.json
-	if (typeof initialConfig.doubleClickColumnHandleForcedWith === 'string') {
-		initialConfig.doubleClickColumnHandleForcedWith = parseInt(initialConfig.doubleClickColumnHandleForcedWith)
-		if (isNaN(initialConfig.doubleClickColumnHandleForcedWith)) {
-			initialConfig.doubleClickColumnHandleForcedWith = 200
-		}
-	}
+  // some fixes, was sometimes a string because if package.json
+  if (typeof initialConfig.doubleClickColumnHandleForcedWith === 'string') {
+    initialConfig.doubleClickColumnHandleForcedWith = parseInt(initialConfig.doubleClickColumnHandleForcedWith)
+    if (isNaN(initialConfig.doubleClickColumnHandleForcedWith)) {
+      initialConfig.doubleClickColumnHandleForcedWith = 200
+    }
+  }
 
 }
 
@@ -77,17 +77,17 @@ let hiddenPhysicalRowIndicesSorted: number[] = []
 let hiddenPhysicalColumnIndicesSorted: number[] = []
 
 //visual indices
-let firstAndLastVisibleRows: {first: number, last: number} | null = null
-let firstAndLastVisibleColumns: {first: number, last: number} | null = null
+let firstAndLastVisibleRows: { first: number, last: number } | null = null
+let firstAndLastVisibleColumns: { first: number, last: number } | null = null
 
 let copyPasteRowLimit = 10_000_000
 let copyPasteColLimit = 10_000_000
 
 
 type HeaderRowWithIndexUndoStackItem = {
-	action: 'added' | 'removed'
-	visualIndex: number
-	headerData: Array<string | null>
+  action: 'added' | 'removed'
+  visualIndex: number
+  headerData: Array<string | null>
 }
 let headerRowWithIndexUndoStack: Array<HeaderRowWithIndexUndoStackItem> = []
 let headerRowWithIndexRedoStack: Array<HeaderRowWithIndexUndoStackItem> = []
@@ -108,33 +108,33 @@ let columnIsQuoted: boolean[]
 //csv reader options + some ui options
 //this gets overwritten with the real configuration in setCsvReadOptionsInitial
 let defaultCsvReadOptions: CsvReadOptions = {
-	header: false, //always use false to get an array of arrays
-	comments: '#',
-	delimiter: '', //auto detect
-	delimitersToGuess: [',', '\t', '|', ';',
-		String.fromCharCode(30), //Papa.RECORD_SEP // \u001e" // INFORMATION SEPARATOR TWO
-		String.fromCharCode(31), //Papa.UNIT_SEP // \u001f" // INFORMATION SEPARATOR ONE
-	],
-	newline: '', //auto detect
-	quoteChar: '"',
-	escapeChar: '"',
-	skipEmptyLines: true,
-	dynamicTyping: false,
-	_hasHeader: false,
+  header: false, //always use false to get an array of arrays
+  comments: '#',
+  delimiter: '', //auto detect
+  delimitersToGuess: [',', '\t', '|', ';',
+    String.fromCharCode(30), //Papa.RECORD_SEP // \u001e" // INFORMATION SEPARATOR TWO
+    String.fromCharCode(31), //Papa.UNIT_SEP // \u001f" // INFORMATION SEPARATOR ONE
+  ],
+  newline: '', //auto detect
+  quoteChar: '"',
+  escapeChar: '"',
+  skipEmptyLines: true,
+  dynamicTyping: false,
+  _hasHeader: false,
 }
 
 
 //this gets overwritten with the real configuration in setCsvWriteOptionsInitial
 let defaultCsvWriteOptions: CsvWriteOptions = {
-	header: false,
-	comments: '#',
-	delimiter: '', //'' = use from input, will be set from empty to string when exporting (or earlier)
-	newline: '', //set by editor
-	quoteChar: '"',
-	escapeChar: '"',
-	quoteAllFields: false,
-	quoteEmptyOrNullFields: false,
-	retainQuoteInformation: true,
+  header: false,
+  comments: '#',
+  delimiter: '', //'' = use from input, will be set from empty to string when exporting (or earlier)
+  newline: '', //set by editor
+  quoteChar: '"',
+  escapeChar: '"',
+  quoteAllFields: false,
+  quoteEmptyOrNullFields: false,
+  retainQuoteInformation: true,
 }
 //will be set when we read the csv content
 let newLineFromInput = '\n'
@@ -340,12 +340,12 @@ setCsvReadOptionsInitial(defaultCsvReadOptions)
 setCsvWriteOptionsInitial(defaultCsvWriteOptions)
 
 if (typeof initialContent === 'undefined') {
-	// tslint:disable-next-line:no-duplicate-variable
-	var initialContent = ''
+  // tslint:disable-next-line:no-duplicate-variable
+  var initialContent = ''
 }
 
 if (initialContent === undefined) {
-	initialContent = ''
+  initialContent = ''
 }
 
 // initialContent = `123,wet
@@ -362,8 +362,8 @@ if (initialContent === undefined) {
 // `
 
 if (!vscode) {
-	console.log("initialConfig: ", initialConfig)
-	console.log("initialContent: " + initialContent)
+  console.log("initialConfig: ", initialConfig)
+  console.log("initialContent: " + initialContent)
 }
 
 //set values from extension config
@@ -371,44 +371,44 @@ setupAndApplyInitialConfigPart1(initialConfig, initialVars)
 
 setupGlobalShortcutsInVs()
 
-console.log(initialContent);
+console.log("init content", initialContent);
 //see readDataAgain
 let _data = parseCsv(initialContent, defaultCsvReadOptions)
 
 //when we get data from vs code we receive it via messages
 if (_data && !vscode) {
 
-	let _exampleData: string[][] = []
-	let initialRows = 5
-	let initialCols = 5
+  let _exampleData: string[][] = []
+  let initialRows = 5
+  let initialCols = 5
 
-	_exampleData = [...Array(initialRows).keys()].map(p =>
-		[...Array(initialCols).keys()].map(k => '')
-	)
+  _exampleData = [...Array(initialRows).keys()].map(p =>
+    [...Array(initialCols).keys()].map(k => '')
+  )
 
-	//@ts-ignore
-	// _exampleData = Handsontable.helper.createSpreadsheetData(100, 20)
-	// _exampleData = Handsontable.helper.createSpreadsheetData(1000, 20)
-	// _exampleData = Handsontable.helper.createSpreadsheetData(10000, 21)
-	// _exampleData = Handsontable.helper.createSpreadsheetData(100000, 20)
+  //@ts-ignore
+  // _exampleData = Handsontable.helper.createSpreadsheetData(100, 20)
+  // _exampleData = Handsontable.helper.createSpreadsheetData(1000, 20)
+  // _exampleData = Handsontable.helper.createSpreadsheetData(10000, 21)
+  // _exampleData = Handsontable.helper.createSpreadsheetData(100000, 20)
 
-	_data = {
-		columnIsQuoted: _exampleData[0].map(p => false),
-		data: _exampleData
-	}
+  _data = {
+    columnIsQuoted: _exampleData[0].map(p => false),
+    data: _exampleData
+  }
 
-	displayData(_data, defaultCsvReadOptions)
+  displayData(_data, defaultCsvReadOptions)
 }
 
 if (vscode) {
 
-	receivedCsvProgBarWrapper.style.display = "block"
+  receivedCsvProgBarWrapper.style.display = "block"
 
-	window.addEventListener('message', (e) => {
-		handleVsCodeMessage(e)
-	})
-	_postReadyMessage()
-	// console.log(JSON.stringify(vscode.getState()))
+  window.addEventListener('message', (e) => {
+    handleVsCodeMessage(e)
+  })
+  _postReadyMessage()
+  // console.log(JSON.stringify(vscode.getState()))
 }
 
 
@@ -417,46 +417,46 @@ if (vscode) {
 
 //register this before handsontable so we can first apply our actions
 function setupGlobalShortcutsInVs() {
-	if (vscode) {
-		Mousetrap.bindGlobal(['meta+s', 'ctrl+s'], (e) => {
-			e.preventDefault()
+  if (vscode) {
+    Mousetrap.bindGlobal(['meta+s', 'ctrl+s'], (e) => {
+      e.preventDefault()
 
-			if (hot) {
-				let editor = hot.getActiveEditor() as any
-				// see https://handsontable.com/docs/6.2.2/tutorial-cell-editor.html
-				if (editor.isOpened()) {
-					editor.finishEditing(false)
-				}
-			}
+      if (hot) {
+        let editor = hot.getActiveEditor() as any
+        // see https://handsontable.com/docs/6.2.2/tutorial-cell-editor.html
+        if (editor.isOpened()) {
+          editor.finishEditing(false)
+        }
+      }
 
-			postApplyContent(true)
-		})
-	}
+      postApplyContent(true)
+    })
+  }
 
-	Mousetrap.bindGlobal(['ctrl+ins'], (e) => {
-		insertRowBelow()
-	})
-	Mousetrap.bindGlobal(['ctrl+shift+ins'], (e) => {
-		insertRowAbove()
-	})
-	//bad for mac... deletes row but inserts hyphens (of different lengths, depending in ctrl or shift is pressed or combined)
-	Mousetrap.bindGlobal(['ctrl+shift+alt+-'], (e) => {
-		pretendRemoveRowContextMenuActionClicked()
-	})
+  Mousetrap.bindGlobal(['ctrl+ins'], (e) => {
+    insertRowBelow()
+  })
+  Mousetrap.bindGlobal(['ctrl+shift+ins'], (e) => {
+    insertRowAbove()
+  })
+  //bad for mac... deletes row but inserts hyphens (of different lengths, depending in ctrl or shift is pressed or combined)
+  Mousetrap.bindGlobal(['ctrl+shift+alt+-'], (e) => {
+    pretendRemoveRowContextMenuActionClicked()
+  })
 
-	document.documentElement.addEventListener('keydown', (e) => {
-		if (hoveredATag && isOpenLinkModifierPressed(e)) {
-			hoveredATag.classList.add(isOpenUrlKeyDownClass)
-		}
-	})
-	document.documentElement.addEventListener('keyup', (e) => {
-		if (hoveredATag) {
-			hoveredATag.classList.remove(isOpenUrlKeyDownClass)
-		}
-	})
+  document.documentElement.addEventListener('keydown', (e) => {
+    if (hoveredATag && isOpenLinkModifierPressed(e)) {
+      hoveredATag.classList.add(isOpenUrlKeyDownClass)
+    }
+  })
+  document.documentElement.addEventListener('keyup', (e) => {
+    if (hoveredATag) {
+      hoveredATag.classList.remove(isOpenUrlKeyDownClass)
+    }
+  })
 
-	//---- some shortcuts are also in ui.ts where the handsontable instance is created...
-	//needed for core handsontable shortcuts e.g. that involve arrow keys
+  //---- some shortcuts are also in ui.ts where the handsontable instance is created...
+  //needed for core handsontable shortcuts e.g. that involve arrow keys
 
 
 }

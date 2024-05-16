@@ -524,7 +524,7 @@ function createEditorHtml(webview, context, config, initialVars) {
 						</span>
 					</vscode-button>
 
-					<vscode-button appearance="secondary" id="btn-apply-changes-to-file" class="on-readonly-disable-btn mar-left-half" onclick="postApplyContent(false)">
+					<vscode-button appearance="secondary" style="display:none" id="btn-apply-changes-to-file" class="on-readonly-disable-btn mar-left-half" onclick="postApplyContent(false)">
 						<span slot="start" class="icon is-small"><i class="fas fa-reply"></i></span>
 						<span style="width: 9rem">Apply changes to file</span>
 

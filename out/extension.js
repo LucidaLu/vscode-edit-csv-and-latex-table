@@ -7,6 +7,7 @@ const util_1 = require("./util");
 const getHtml_1 = require("./getHtml");
 const instanceManager_1 = require("./instanceManager");
 const configurationHelper_1 = require("./configurationHelper");
+// other.ts
 // const debounceDocumentChangeInMs = 1000
 //for a full list of context keys see https://code.visualstudio.com/docs/getstarted/keybindings#_when-clause-contexts
 /**
@@ -78,9 +79,11 @@ function activate(context) {
             // let orange = vscode.window.createOutputChannel("Orange");
             // orange.appendLine(highlighted);
             if ((0, util_1.isTabular)(selected)) {
-                console.log(selected);
                 // regardless of whether previously there is one
                 // remember to add a comment around the selected text
+                let ro_config = vscode.workspace.getConfiguration().get('files.readonlyInclude');
+                ro_config[editor.document.uri.fsPath] = true;
+                vscode.workspace.getConfiguration().update('files.readonlyInclude', ro_config, vscode.ConfigurationTarget.Global);
                 createNewTabularEditorInstance(context, vscode.window.activeTextEditor, instanceManager);
             }
         }
@@ -521,11 +524,10 @@ function createNewTabularEditorInstance(context, activeTextEditor, instanceManag
     if (overwriteSettings !== null) {
         (0, configurationHelper_1.overwriteConfiguration)(config, overwriteSettings);
     }
-    config.readOption_comment = "#";
+    config.readOption_comment = "latex";
     config.readOption_quoteChar = '';
     config.readOption_escapeChar = '';
     config.readOption_delimiter = '&';
-    config.tabularFlag = true;
     //a file watcher works when the file is in the current workspace (folder) even if it's not opened
     //it also works when we open any file (not in the workspace) and 
     //	we edit the file inside vs code
@@ -599,6 +601,10 @@ function createNewTabularEditorInstance(context, activeTextEditor, instanceManag
     }
     //just set the panel if we added the instance
     instance.panel = panel;
+    const selection = activeTextEditor.selection;
+    // const selectionRange = new vscode.Range(selection.start.line, selection.start.character, selection.end.line, selection.end.character);
+    const selectionRange = new vscode.Range(selection.start.line + 1, 0, selection.end.line - 1, activeTextEditor.document.lineAt(selection.end.line - 1).text.length);
+    const the_tabular_body = activeTextEditor.document.getText(selectionRange);
     panel.webview.onDidReceiveMessage((message) => {
         switch (message.command) {
             case 'ready': {
@@ -640,36 +646,34 @@ function createNewTabularEditorInstance(context, activeTextEditor, instanceManag
                     //see https://github.com/microsoft/vscode/issues/824
                     //see https://github.com/microsoft/vscode/issues/3025
                     //in case we closed the file (we have an old view/model of the file) open it again
-                    vscode.workspace.openTextDocument(instance.sourceUri)
-                        .then(document => {
-                        const content = document.getText();
-                        instance.lastCommittedContent = content;
-                        // debugLog(`content send`, content.split('\n')[0])
-                        funcSendContent(content);
-                    }, error => {
-                        vscode.window.showErrorMessage(`could not read the source file, error: ${error === null || error === void 0 ? void 0 : error.message}`);
-                    });
+                    const content = the_tabular_body;
+                    instance.lastCommittedContent = content; //content
+                    // debugLog(`content send`, content.split('\n')[0])
+                    funcSendContent(content);
                 }
                 else if (activeTextEditor.document.isClosed) {
                     //slow path
                     //not synchronized anymore...
                     //we need to get the real file content from disk
-                    vscode.workspace.openTextDocument(instance.sourceUri)
-                        .then(document => {
-                        const content = document.getText();
-                        instance.lastCommittedContent = content;
-                        // debugLog(`content send`, content.split('\n')[0])
-                        funcSendContent(content);
-                    }, error => {
-                        vscode.window.showErrorMessage(`could not read the source file, error: ${error === null || error === void 0 ? void 0 : error.message}`);
-                    });
+                    // vscode.workspace.openTextDocument(instance.sourceUri)
+                    //   .then(
+                    //     document => {
+                    //       const content = document.getText()
+                    //       instance.lastCommittedContent = content
+                    //       // debugLog(`content send`, content.split('\n')[0])
+                    //       funcSendContent(content)
+                    //     }, error => {
+                    //       vscode.window.showErrorMessage(`could not read the source file, error: ${error?.message}`);
+                    //     }
+                    //   )
+                    console.error("don't do this");
                 }
                 else {
                     //fast path
                     //file is still open and synchronized
                     //sometimes the model is not updated fast enough after a change detection, thus we get old content
                     //however, if the user manually triggers the reload, then the model is already synced
-                    const content = activeTextEditor.document.getText();
+                    const content = the_tabular_body; //activeTextEditor.document.getText()
                     // debugLog(`content send`, content.split('\n')[0])
                     instance.lastCommittedContent = content;
                     funcSendContent(content);
@@ -695,8 +699,11 @@ function createNewTabularEditorInstance(context, activeTextEditor, instanceManag
                 break;
             }
             case "apply": {
-                // const { csvContent, saveSourceFile } = message
-                // applyContent(instance, csvContent, saveSourceFile, config.openSourceFileAfterApply)
+                const { csvContent, saveSourceFile } = message;
+                console.log("csvContent", csvContent);
+                console.log("saveSourceFile", saveSourceFile);
+                applyContentPartial(selection, instance, csvContent, saveSourceFile, config.openSourceFileAfterApply);
+                vscode.commands.executeCommand('workbench.action.closeActiveEditor');
                 break;
             }
             case "copyToClipboard": {
@@ -717,9 +724,14 @@ function createNewTabularEditorInstance(context, activeTextEditor, instanceManag
             default: notExhaustive(message, `Received unknown post message from extension: ${JSON.stringify(message)}`);
         }
     }, undefined, context.subscriptions);
+    const associated_fsPath = activeTextEditor.document.uri.fsPath;
     panel.onDidDispose(() => {
         var _a, _b;
         (0, util_1.debugLog)(`dispose csv editor panel (webview)`);
+        console.log("closing");
+        let ro_config = vscode.workspace.getConfiguration().get('files.readonlyInclude');
+        ro_config[associated_fsPath] = false;
+        vscode.workspace.getConfiguration().update('files.readonlyInclude', ro_config, vscode.ConfigurationTarget.Global);
         try {
             instanceManager.removeInstance(instance);
         }
@@ -778,6 +790,69 @@ function applyContent(instance, newContent, saveSourceFile, openSourceFileAfterA
         var firstLine = document.lineAt(0);
         var lastLine = document.lineAt(document.lineCount - 1);
         var textRange = new vscode.Range(0, firstLine.range.start.character, document.lineCount - 1, lastLine.range.end.character);
+        //don't apply if the content didn't change
+        if (document.getText() === newContent) {
+            (0, util_1.debugLog)(`content didn't change`);
+            return;
+        }
+        edit.replace(document.uri, textRange, newContent);
+        vscode.workspace.applyEdit(edit)
+            .then(editsApplied => {
+            instance.lastCommittedContent = newContent;
+            _afterEditsApplied(instance, document, editsApplied, saveSourceFile, openSourceFileAfterApply);
+        }, (reason) => {
+            console.warn(`Error applying edits`);
+            console.warn(reason);
+            vscode.window.showErrorMessage(`Error applying edits`);
+        });
+        // vscode.window.showTextDocument(document)
+        // 	.then(editor => {
+        // 		editor.edit((builder) => {
+        // 			var firstLine = document.lineAt(0);
+        // 			var lastLine = document.lineAt(document.lineCount - 1);
+        // 			var textRange = new vscode.Range(0,
+        // 				firstLine.range.start.character,
+        // 				document.lineCount - 1,
+        // 				lastLine.range.end.character);
+        // 			builder.replace(textRange, newContent)
+        // 		})
+        // 			.then(editsApplied => {
+        // 				_afterEditsApplied(document, editsApplied, saveSourceFile)
+        // 			})
+        // 	})
+    }, (reason) => {
+        //maybe the source file was deleted...
+        //see https://github.com/microsoft/vscode-extension-samples/pull/195/files
+        console.warn(`Could not find the source file, trying to access it and create a temp file with the same path...`);
+        console.warn(reason);
+        vscode.workspace.fs.stat(instance.sourceUri).
+            then(fileStat => {
+            //file exists and can be accessed
+            vscode.window.showErrorMessage(`Could apply changed because the source file could not be found`);
+        }, error => {
+            //file is probably deleted
+            // vscode.window.showWarningMessageMessage(`The source file could not be found and was probably deleted.`)
+            createNewSourceFile(instance, newContent, openSourceFileAfterApply, saveSourceFile);
+        });
+    });
+}
+/**
+ * tries to apply (replace the whole file content) with the new content
+ */
+function applyContentPartial(selection, instance, newContent, saveSourceFile, openSourceFileAfterApply) {
+    vscode.workspace.openTextDocument(instance.sourceUri)
+        .then(document => {
+        console.log(document.lineAt(selection.end.line - 1).text.length);
+        const first_line = document.lineAt(selection.start.line + 1).text;
+        const indent = first_line.length - first_line.trimLeft().length;
+        newContent = newContent.split('\n')
+            .map(line => line.padStart(indent + line.length, ' ')).
+            join('\n');
+        console.log(newContent);
+        const edit = new vscode.WorkspaceEdit();
+        var firstLine = document.lineAt(selection.start.line + 1);
+        var lastLine = document.lineAt(selection.end.line - 1);
+        var textRange = new vscode.Range(selection.start.line + 1, firstLine.range.start.character, selection.end.line - 1, lastLine.range.end.character);
         //don't apply if the content didn't change
         if (document.getText() === newContent) {
             (0, util_1.debugLog)(`content didn't change`);

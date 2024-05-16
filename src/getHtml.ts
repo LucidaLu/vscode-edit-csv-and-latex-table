@@ -6,10 +6,10 @@ import * as path from 'path';
  * @param filePath 
  */
 export function getResourcePath(webview: vscode.Webview, context: vscode.ExtensionContext, filePath: string): string {
-	//fix for windows because there path.join will use \ as separator and when we inline this string in html/js
-	//we get specials strings e.g. c:\n
-	// return `vscode-resource:${path.join(context.extensionPath, filePath).replace(/\\/g, '/')}`
-	return `${webview.asWebviewUri(vscode.Uri.file(path.join(context.extensionPath, filePath).replace(/\\/g, '/')))}`
+  //fix for windows because there path.join will use \ as separator and when we inline this string in html/js
+  //we get specials strings e.g. c:\n
+  // return `vscode-resource:${path.join(context.extensionPath, filePath).replace(/\\/g, '/')}`
+  return `${webview.asWebviewUri(vscode.Uri.file(path.join(context.extensionPath, filePath).replace(/\\/g, '/')))}`
 }
 
 /**
@@ -20,49 +20,49 @@ export function getResourcePath(webview: vscode.Webview, context: vscode.Extensi
  */
 export function createEditorHtml(webview: vscode.Webview, context: vscode.ExtensionContext, config: EditCsvConfig, initialVars: InitialVars): string {
 
-	const _getResourcePath = getResourcePath.bind(undefined, webview, context)
+  const _getResourcePath = getResourcePath.bind(undefined, webview, context)
 
-	let handsontableCss = _getResourcePath('thirdParty/handsontable/handsontable.min.css')
-	// let handsontableCss = _getResourcePath('thirdParty/handsontable/handsontable.css')
-	let handsontableJs = _getResourcePath('thirdParty/handsontable/handsontable.min.js')
-	// let handsontableJs = _getResourcePath('thirdParty/handsontable/handsontable.js')
-	let papaparseJs = _getResourcePath('thirdParty/papaparse/papaparse.min.js')
-	// let papaparseJs = _getResourcePath('thirdParty/papaparse/papaparse.js')
+  let handsontableCss = _getResourcePath('thirdParty/handsontable/handsontable.min.css')
+  // let handsontableCss = _getResourcePath('thirdParty/handsontable/handsontable.css')
+  let handsontableJs = _getResourcePath('thirdParty/handsontable/handsontable.min.js')
+  // let handsontableJs = _getResourcePath('thirdParty/handsontable/handsontable.js')
+  let papaparseJs = _getResourcePath('thirdParty/papaparse/papaparse.min.js')
+  // let papaparseJs = _getResourcePath('thirdParty/papaparse/papaparse.js')
 
-	const mousetrapJs = _getResourcePath('thirdParty/mousetrap/mousetrap.min.js')
-	const mousetrapBindGlobalJs = _getResourcePath('thirdParty/mousetrap/plugins/global-bind/mousetrap-global-bind.min.js')
+  const mousetrapJs = _getResourcePath('thirdParty/mousetrap/mousetrap.min.js')
+  const mousetrapBindGlobalJs = _getResourcePath('thirdParty/mousetrap/plugins/global-bind/mousetrap-global-bind.min.js')
 
-	const bigJs = _getResourcePath('thirdParty/big.js/big.min.js')
-	const bigJsToFormat = _getResourcePath('thirdParty/toFormat/toFormat.min.js')
+  const bigJs = _getResourcePath('thirdParty/big.js/big.min.js')
+  const bigJsToFormat = _getResourcePath('thirdParty/toFormat/toFormat.min.js')
 
-	let fontAwesomeCss = _getResourcePath('thirdParty/fortawesome/fontawesome-free/css/all.min.css')
-	//we need to load the font manually because the url() seems to not work properly with vscode-resource
-	const iconFont = _getResourcePath('thirdParty/fortawesome/fontawesome-free/webfonts/fa-solid-900.woff2')
+  let fontAwesomeCss = _getResourcePath('thirdParty/fortawesome/fontawesome-free/css/all.min.css')
+  //we need to load the font manually because the url() seems to not work properly with vscode-resource
+  const iconFont = _getResourcePath('thirdParty/fortawesome/fontawesome-free/webfonts/fa-solid-900.woff2')
 
-	const mainCss = _getResourcePath('csvEditorHtml/main.css')
-	const darkThemeCss = _getResourcePath('csvEditorHtml/dark.css')
-	const lightThemeCss = _getResourcePath('csvEditorHtml/light.css')
-	const hightContrastThemeCss = _getResourcePath('csvEditorHtml/high_contrast.css')
-	const settingsOverwriteCss = _getResourcePath('csvEditorHtml/settingsOverwrite.css')
+  const mainCss = _getResourcePath('csvEditorHtml/main.css')
+  const darkThemeCss = _getResourcePath('csvEditorHtml/dark.css')
+  const lightThemeCss = _getResourcePath('csvEditorHtml/light.css')
+  const hightContrastThemeCss = _getResourcePath('csvEditorHtml/high_contrast.css')
+  const settingsOverwriteCss = _getResourcePath('csvEditorHtml/settingsOverwrite.css')
 
-	//scripts
-	const progressJs = _getResourcePath('csvEditorHtml/out/progressbar.js')
-	const findWidgetJs = _getResourcePath('csvEditorHtml/out/findWidget.js')
-	const ioJs = _getResourcePath('csvEditorHtml/out/io.js')
-	const uiJs = _getResourcePath('csvEditorHtml/out/ui.js')
-	const utilJs = _getResourcePath('csvEditorHtml/out/util.js')
-	const mainJs = _getResourcePath('csvEditorHtml/out/main.js')
+  //scripts
+  const progressJs = _getResourcePath('csvEditorHtml/out/progressbar.js')
+  const findWidgetJs = _getResourcePath('csvEditorHtml/out/findWidget.js')
+  const ioJs = _getResourcePath('csvEditorHtml/out/io.js')
+  const uiJs = _getResourcePath('csvEditorHtml/out/ui.js')
+  const utilJs = _getResourcePath('csvEditorHtml/out/util.js')
+  const mainJs = _getResourcePath('csvEditorHtml/out/main.js')
 
-	const beforeDomLoadedJs = _getResourcePath('csvEditorHtml/out/beforeDomLoaded.js')
+  const beforeDomLoadedJs = _getResourcePath('csvEditorHtml/out/beforeDomLoaded.js')
 
-	const toolkit = _getResourcePath('node_modules/@vscode/webview-ui-toolkit/dist/toolkit.min.js');
+  const toolkit = _getResourcePath('node_modules/@vscode/webview-ui-toolkit/dist/toolkit.min.js');
 
-	//use blocks so vs code adds folding
+  //use blocks so vs code adds folding
 
-	let findWidgetHtml = ``
-	{
-		// Tip: Install the es6-string-html VS Code extension to enable code highlighting below
-		findWidgetHtml = /*html*/`
+  let findWidgetHtml = ``
+  {
+    // Tip: Install the es6-string-html VS Code extension to enable code highlighting below
+    findWidgetHtml = /*html*/`
 		<div id="find-widget" class="find-widget" style="display: none; right: 100px;">
 
 		<div id="find-widget-progress-bar" class="progress-bar"></div>
@@ -144,11 +144,11 @@ export function createEditorHtml(webview: vscode.Webview, context: vscode.Extens
 
 	</div>
 		`
-	}
+  }
 
-	let bodyPageHtml = ``
-	 {
-		bodyPageHtml= /*html*/`
+  let bodyPageHtml = ``
+  {
+    bodyPageHtml = /*html*/`
 		<div class="page full-h">
 
 			<div class="all-options">
@@ -534,7 +534,7 @@ export function createEditorHtml(webview: vscode.Webview, context: vscode.Extens
 						</span>
 					</vscode-button>
 
-					<vscode-button appearance="secondary" id="btn-apply-changes-to-file" class="on-readonly-disable-btn mar-left-half" onclick="postApplyContent(false)">
+					<vscode-button appearance="secondary" style="display:none" id="btn-apply-changes-to-file" class="on-readonly-disable-btn mar-left-half" onclick="postApplyContent(false)">
 						<span slot="start" class="icon is-small"><i class="fas fa-reply"></i></span>
 						<span style="width: 9rem">Apply changes to file</span>
 
@@ -736,11 +736,11 @@ export function createEditorHtml(webview: vscode.Webview, context: vscode.Extens
 
 		</div>
 		`
-	 }
+  }
 
-	let helpModalHtml = ``
-	{
-		helpModalHtml = /*html*/`
+  let helpModalHtml = ``
+  {
+    helpModalHtml = /*html*/`
 		<div id="help-modal" class="modal">
 		<div class="modal-background" onclick="toggleHelpModal(false)"></div>
 		<div class="modal-content">
@@ -818,12 +818,12 @@ export function createEditorHtml(webview: vscode.Webview, context: vscode.Extens
 		</button>
 	</div>
 		`
-	}
-	
-	
-	let askReadAgainModalHtml = ``
-	{
-		askReadAgainModalHtml = /*html*/`
+  }
+
+
+  let askReadAgainModalHtml = ``
+  {
+    askReadAgainModalHtml = /*html*/`
 		<div id="ask-read-again-modal" class="modal modal-centered">
 		<div class="modal-background"></div>
 		<div class="modal-content">
@@ -853,11 +853,11 @@ export function createEditorHtml(webview: vscode.Webview, context: vscode.Extens
 		</button>
 	</div>
 	`
-	}
+  }
 
-	let askReloadFileModalHtml = ``
-	{
-		askReloadFileModalHtml = /*html*/`
+  let askReloadFileModalHtml = ``
+  {
+    askReloadFileModalHtml = /*html*/`
 		<div id="ask-reload-file-modal" class="modal modal-centered">
 		<div class="modal-background"></div>
 		<div class="modal-content">
@@ -888,11 +888,11 @@ export function createEditorHtml(webview: vscode.Webview, context: vscode.Extens
 		</button>
 	</div>
 		`
-	}
+  }
 
-	let sourceFileChangedModalHtml = ``
-	{
-		sourceFileChangedModalHtml = /*html*/`
+  let sourceFileChangedModalHtml = ``
+  {
+    sourceFileChangedModalHtml = /*html*/`
 		<div id="source-file-changed-modal" class="modal modal-centered">
 		<div class="modal-background"></div>
 		<div class="modal-content">
@@ -926,9 +926,9 @@ export function createEditorHtml(webview: vscode.Webview, context: vscode.Extens
 		</button>-->
 	</div>
 		`
-	}
+  }
 
-	return /*html*/`
+  return /*html*/`
 	<!DOCTYPE html>
 	<html>
 	<head>

@@ -12,7 +12,6 @@ const defaultConfig: EditCsvConfig = {
 	lastColumnOrFirstColumnNavigationBehavior: 'wrap',
 	optionsBarAppearance: "collapsed",
 	readOption_comment: "#",
-  tabularFlag: false,
 	readOption_quoteChar: '"',
 	readOption_escapeChar: '"',
 	readOption_delimiter: "",

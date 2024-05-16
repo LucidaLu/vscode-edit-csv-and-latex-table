@@ -24,7 +24,6 @@ var initialConfig: EditCsvConfig | undefined = {
   lastRowOrFirstRowNavigationBehavior: 'stop',
   lastColumnOrFirstColumnNavigationBehavior: 'stop',
   optionsBarAppearance: "collapsed",
-  tabularFlag: false,
   readOption_comment: "#",
   readOption_quoteChar: '"',
   readOption_escapeChar: '"',
